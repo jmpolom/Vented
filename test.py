@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import matplotlib.pyplot as plt
-import vented_box
+import vented
 
 # User specified design parameters
 Fs = 32.0  # Driver resonance frequency, in Hertz
