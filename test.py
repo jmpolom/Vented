@@ -12,5 +12,5 @@ R = 0.75   # Enclosure vent internal radius, in inches
 Vb = 0.75  # Enclosure volume, in cubic feet
 Ql = 7     # Enclosure loss factor
 
-vented_box.response_plot(Fs,Qts,Vas,Lv,R,Vb,Ql,plot=plt)
+vented.response_plot(Fs,Qts,Vas,Lv,R,Vb,Ql,plot=plt)
 plt.show()
