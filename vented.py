@@ -83,9 +83,9 @@ def response(f,T0,a1,a2,a3):
 
     return dB
 
-def displacement(f,a,Ql,Qt,Tb,Ts,Xmax):
+def displacement(f,a,Ql,Qt,Tb,Ts):
     """
-    Driver displacement function, equation (14) in 'Vented Box Loudspeaker Systems'
+    Diaphragm displacement function, equation (14) in 'Vented Box Loudspeaker Systems'
 
     Returns
     -------
@@ -98,7 +98,7 @@ def displacement(f,a,Ql,Qt,Tb,Ts,Xmax):
     num = s**2*Tb**2 + s*Tb/Ql + 1
     denom = s**4*Tb**2*Ts**2 + s**3*(Tb**2*Ts/Qt + Tb*Ts**2/Ql) + s**2*((a + 1)*Tb**2 + (Tb*Ts)/(Ql*Qt) + Ts**2) + s*(Tb/Ql + Ts/Qt) + 1
 
-    displacement = Xmax*np.sqrt((num/denom).real**2 + (num/denom).imag**2)
+    displacement = np.sqrt((num/denom).real**2 + (num/denom).imag**2)
 #    dB = 10*np.log10(displacement)
 
     return displacement
@@ -160,7 +160,7 @@ def xtickmarks(xmin,xmax):
     return loc[imin:imax + 1],labels[imin:imax + 1]
 
 
-def response_plot(Fs,Qes,Qms,Re,Xmax,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=1000,plot=None):
+def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=1000,plot=None):
     """
     Calculates and returns the vented loudspeaker enclosure system's response (gain) values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -192,7 +192,7 @@ def response_plot(Fs,Qes,Qms,Re,Xmax,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000
     # Generate frequency response values
     for f in response_range:
         response_values = np.append(response_values,response(f,T0,a1,a2,a3))
-        displacement_values = np.append(displacement_values,displacement(f,a,Ql,Qt,Tb,Ts,Xmax))
+        displacement_values = np.append(displacement_values,displacement(f,a,Ql,Qt,Tb,Ts))
         impedance_values = np.append(impedance_values,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
 
     # Plot the response data if given matplotlib plotting object
