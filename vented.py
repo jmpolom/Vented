@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-vented_box.py provides functions that calculate the approximate (model predicted), theoretical frequency response of a vented box loudspeaker system. The script uses mathematical model analysis results from A. N. Theile and Richard Small, as published in 'Loudspeakers in Vented Boxes' and 'Vented Box Loudspeaker Systems', respectively.
+vented.py provides functions that calculate the approximate (model predicted), theoretical frequency response of a vented box loudspeaker system. The script uses mathematical model analysis results from A. N. Theile and Richard Small, as published in 'Loudspeakers in Vented Boxes' and 'Vented Box Loudspeaker Systems', respectively.
 
 Script Name:    vented_box.py
 Author:         Jonathan Polom
@@ -115,10 +115,10 @@ def impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts):
 
     s = complex(0,2*np.pi*f)
 
-    num = s*(Ts/Qms) + (s**2*Tb**2 + s*Tb/Ql + 1)
+    num = s*(Ts/Qms)*(s**2*Tb**2 + s*Tb/Ql + 1)
     denom = s**4*Tb**2*Ts**2 + s**3*(Tb**2*Ts/Qms + Tb*Ts**2/Ql) + s**2*((a + 1)*Tb**2 + (Tb*Ts)/(Ql*Qms) + Ts**2) + s*(Tb/Ql + Ts/Qms) + 1
 
-    Res = Re*(Qms/Qes)
+    Res = float(Re)*(Qms/Qes)
 
     impedance = float(Re) + Res*np.sqrt((num/denom).real**2 + (num/denom).imag**2)
 
@@ -197,16 +197,23 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=
 
     # Plot the response data if given matplotlib plotting object
     if plot != None:
+        # Figure 1 for response and impedance plots
+        plot.figure(1)
         plot.semilogx(response_range,response_values,'b-',basex=10)
-       
-        #plot.grid(b=True,which='both') # Doesn't display major and minor gridlines
-        plot.grid(b=True,which='minor') # Apparently the only way to get minor and major
-        plot.grid(b=True,which='major') # grid lines on the plot...
+
+        # Figure 1 title
+        plot.title('Vented Enclosure Frequency Response')
+
+        plot.grid(b=True,which='minor')
+        plot.grid(b=True,which='major')
 
         # Frequency response Y-axis properties
         plot.ylim(-24,6)
         plot.yticks(range(-24,9,3))
         plot.ylabel('Response Level (dB)')
+
+        # X-axis labeling must come before twinx() called
+        plot.xlabel('Frequency (Hz.)')
 
         # Create second Y-axis for driver displacement
         plot2x = plot.twinx()
@@ -215,9 +222,24 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=
         # Driver displacement Y-axis properties
         plot2x.set_ylabel('Voice Coil Impedance (Ohms)')
 
-        # Title
-        plot.title('Vented Enclosure Frequency Response')
+        # X-axis properties
+        plot.xlim(freq_min,freq_max)
+        loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
+        plot.xticks(loc,labels)
+        
+        # Figure 2 for diaphragm displacement plot
+        plot.figure(2)
+        plot.semilogx(response_range,displacement_values,basex=10)
 
+        # Figure 2 title
+        plot.title('Driver Diaphragm Displacement')
+        
+        plot.grid(b=True,which='minor')
+        plot.grid(b=True,which='major')
+        
+        # Y-axis properties
+        plot.ylabel('Displacement Fraction')
+        
         # X-axis properties
         plot.xlim(freq_min,freq_max)
         loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
@@ -225,4 +247,4 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=
         plot.xlabel('Frequency (Hz.)')
 
     # Return system response data
-    return response_range,response_values
+    return response_range,response_values,impedance_values,displacement_values
