@@ -1,0 +1,5 @@
+vented.py provides functions that calculate the approximate (model predicted), theoretical frequency response of a vented box loudspeaker system. The script uses mathematical model analysis results from A. N. Theile and Richard Small, as published in 'Loudspeakers in Vented Boxes' and 'Vented Box Loudspeaker Systems', respectively.
+
+Author:         Jonathan Polom
+Date Created:   8 October 2010
+License:        GNU General Public License

@@ -14,7 +14,7 @@ import numpy as np
 
 __author__ = 'Jonathan Polom <s0nic0nslaught@gmail.com>'
 __date__ = datetime.date(2010, 10, 13)
-__version__ = 0.3
+__version__ = 0.5
 
 def params(Fs,Qes,Qms,Vas,Vb,Lv,R):
     """
@@ -197,12 +197,13 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=
 
     # Plot the response data if given matplotlib plotting object
     if plot != None:
-        # Figure 1 for response and impedance plots
+        # Figure 1 for response plot
         plot.figure(1)
-        plot.semilogx(response_range,response_values,'b-',basex=10)
+        plot.semilogx(response_range,response_values,basex=10)
 
         # Figure 1 title
-        plot.title('Vented Enclosure Frequency Response')
+        plot.title('Frequency Response')
+        plot.suptitle('Vented Enclosure')
 
         plot.grid(b=True,which='minor')
         plot.grid(b=True,which='major')
@@ -212,27 +213,49 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=
         plot.yticks(range(-24,9,3))
         plot.ylabel('Response Level (dB)')
 
-        # X-axis labeling must come before twinx() called
+        # X-axis properties
+        plot.xlim(freq_min,freq_max)
+        loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
+        plot.xticks(loc,labels)
         plot.xlabel('Frequency (Hz.)')
 
         # Create second Y-axis for driver displacement
-        plot2x = plot.twinx()
-        plot2x.semilogx(response_range,impedance_values,'k-',linewidth=0.5,basex=10)
+#        plot2x = plot.twinx()
+#        plot2x.semilogx(response_range,impedance_values,'k-',linewidth=0.5,basex=10)
 
         # Driver displacement Y-axis properties
-        plot2x.set_ylabel('Voice Coil Impedance (Ohms)')
+#        plot2x.set_ylabel('Voice Coil Impedance (Ohms)')
+
+        # X-axis labeling must come before twinx() called
+#        plot.xlabel('Frequency (Hz.)')
+
+        # Figure 2 for impedance plot
+        plot.figure(2)
+        plot.semilogx(response_range,impedance_values,basex=10)
+
+        # Figure 1 title
+        plot.title('Voice Coil Impedance')
+        plot.suptitle('Vented Enclosure')
+
+        plot.grid(b=True,which='minor')
+        plot.grid(b=True,which='major')
+
+        # Frequency response Y-axis properties
+        plot.ylabel('Impedance (Ohms)')
 
         # X-axis properties
         plot.xlim(freq_min,freq_max)
         loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
         plot.xticks(loc,labels)
-        
-        # Figure 2 for diaphragm displacement plot
-        plot.figure(2)
+        plot.xlabel('Frequency (Hz.)')        
+
+        # Figure 3 for diaphragm displacement plot
+        plot.figure(3)
         plot.semilogx(response_range,displacement_values,basex=10)
 
         # Figure 2 title
-        plot.title('Driver Diaphragm Displacement')
+        plot.title('Diaphragm Displacement')
+        plot.suptitle('Vented Enclosure')
         
         plot.grid(b=True,which='minor')
         plot.grid(b=True,which='major')
