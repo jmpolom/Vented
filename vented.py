@@ -16,7 +16,7 @@ __author__ = 'Jonathan Polom <s0nic0nslaught@gmail.com>'
 __date__ = datetime.date(2010, 10, 13)
 __version__ = 0.5
 
-def params(Fs,Qes,Qms,Vas,Vb,Lv,R):
+def params(Fs,Qes,Qms,Vas,Vb,Lv,D):
     """
     Calculates dependent system parameters: enclosure tuning frequency, system tuning ratio, system compliance ratio, and the inverted driver resonance angular frequency
 
@@ -35,8 +35,11 @@ def params(Fs,Qes,Qms,Vas,Vb,Lv,R):
     Ts : float
         Inverted driver resonance angular frequency
     """
-    Vb_ci = Vb*12**3 # Convert enclosure volume from cubic feet to cubic inches
-    Fb = np.sqrt((1.463e7*R)/(Vb_ci * (Lv + 1.463*R))) # Needs volume in in.^3
+    Vb_ci = 1000/(2.54**3)*Vb # Convert enclosure volume from liters to in.^3
+    R = D/2 # Convert vent diameter to radius
+
+#    Fb = np.sqrt((1.463e7*R)/(Vb_ci * (Lv + 1.463*R))) # Needs volume in in.^3
+    Fb = np.sqrt((1.464e7*R)/(Vb_ci*Lv)) # Needs volume in in.^3
     h = Fb/Fs # Tuning ratio
     a = Vas/Vb # Compliance ratio
     Tb = 1/(2*np.pi*Fb)
@@ -160,7 +163,7 @@ def xtickmarks(xmin,xmax):
     return loc[imin:imax + 1],labels[imin:imax + 1]
 
 
-def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=1000,plot=None):
+def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,freq_min=10,freq_max=20000,res=1000,plot=None):
     """
     Calculates and returns the vented loudspeaker enclosure system's response (gain) values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -172,7 +175,7 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,R,Ql=7,freq_min=10,freq_max=20000,res=
         Relative system response gain values, calculated at frequencies in response_range
     """
     # Generate dependent parameters
-    a,Fb,h,Qt,Tb,Ts = params(Fs,Qes,Qms,Vas,Vb,Lv,R)
+    a,Fb,h,Qt,Tb,Ts = params(Fs,Qes,Qms,Vas,Vb,Lv,D)
 
     # Generate alignment specification parameters
     T0,a1,a2,a3 = alignment_spec(a,h,Ql,Qt,Ts)
