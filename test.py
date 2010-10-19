@@ -3,6 +3,9 @@
 import matplotlib.pyplot as plt
 import vented
 
+# Driver name
+name = 'Dayton Audio QT305-4, 12 inch sub-woofer'
+
 # User specified design parameters
 Fs = 26.2   # Driver resonance frequency, in Hertz
 Qes = 0.39  # Driver electrical Q
@@ -14,5 +17,5 @@ D = 4.0     # Enclosure vent internal radius, in inches
 Vb = 81.84  # Enclosure volume, in cubic feet
 # Use default enclosure loss factor, Ql=7
 
-vented.response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,freq_max=500,plot=plt)
+vented.response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,name=name,freq_max=500,plot=plt)
 plt.show()

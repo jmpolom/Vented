@@ -13,8 +13,8 @@ import datetime
 import numpy as np
 
 __author__ = 'Jonathan Polom <s0nic0nslaught@gmail.com>'
-__date__ = datetime.date(2010, 10, 13)
-__version__ = 0.5
+__date__ = datetime.date(2010, 10, 19)
+__version__ = 0.6
 
 def params(Fs,Qes,Qms,Vas,Vb,Lv,D):
     """
@@ -163,7 +163,7 @@ def xtickmarks(xmin,xmax):
     return loc[imin:imax + 1],labels[imin:imax + 1]
 
 
-def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,freq_min=10,freq_max=20000,res=1000,plot=None):
+def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,plot=None):
     """
     Calculates and returns the vented loudspeaker enclosure system's response (gain) values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -205,8 +205,8 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,freq_min=10,freq_max=20000,res=
         plot.semilogx(response_range,response_values,basex=10)
 
         # Figure 1 title
+        plot.suptitle(name)
         plot.title('Frequency Response')
-        plot.suptitle('Vented Enclosure')
 
         plot.grid(b=True,which='minor')
         plot.grid(b=True,which='major')
@@ -237,8 +237,8 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,freq_min=10,freq_max=20000,res=
         plot.semilogx(response_range,impedance_values,basex=10)
 
         # Figure 1 title
+        plot.suptitle(name)
         plot.title('Voice Coil Impedance')
-        plot.suptitle('Vented Enclosure')
 
         plot.grid(b=True,which='minor')
         plot.grid(b=True,which='major')
@@ -257,8 +257,8 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,freq_min=10,freq_max=20000,res=
         plot.semilogx(response_range,displacement_values,basex=10)
 
         # Figure 2 title
+        plot.suptitle(name)
         plot.title('Diaphragm Displacement')
-        plot.suptitle('Vented Enclosure')
         
         plot.grid(b=True,which='minor')
         plot.grid(b=True,which='major')
