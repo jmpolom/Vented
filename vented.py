@@ -174,6 +174,14 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,name='',freq_min=10,freq_max=20
     response_values : array-like
         Relative system response gain values, calculated at frequencies in response_range
     """
+
+    """
+    Three cases:
+        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are user-specified -> create alignment accordingly starting with calculation of Fb from Lv and D
+        2) Fs, Qes, Qms, Vas, and D are user-specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
+        3) Fs, Qes, Qms, Vas, and D are user-specified, along with a and h -> create alignment using a and h values specified
+    """
+
     # Generate dependent parameters
     a,Fb,h,Qt,Tb,Ts = params(Fs,Qes,Qms,Vas,Vb,Lv,D)
 
