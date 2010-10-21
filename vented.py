@@ -232,7 +232,7 @@ def freq_vals(freq_min,freq_max,res,basex=10):
 
     return frequency_values
 
-def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None):
+def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=1):
     """
     Calculates and returns a vented loudspeaker enclosure system's response (gain) values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -299,12 +299,12 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name=''
         plot.xticks(loc,labels)
         plot.xlabel('Frequency (Hz.)')
         """
-    plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,1,suptitle=name,ymin=-24,ymax=6,ystep=3)
+    plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,fig,suptitle=name,ymin=-24,ymax=6,ystep=3)
 
     # Return system response data
     return frequencies,responses
 
-def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None):
+def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=2):
     """
     Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -366,11 +366,11 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='
         plot.xticks(loc,labels)
         plot.xlabel('Frequency (Hz.)')
         """
-        plotter(frequencies,impedances,'Impedance (Ohms)','Voice Coil Impedance',pyplot,2,suptitle=name)
+        plotter(frequencies,impedances,'Impedance (Ohms)','Voice Coil Impedance',pyplot,fig,suptitle=name)
 
     return frequencies,impedances
 
-def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None):
+def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=3):
     """
     Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -432,6 +432,6 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,nam
         plot.xticks(loc,labels)
         plot.xlabel('Frequency (Hz.)')
         """
-        plotter(frequencies,displacements,'Displacement Function Magnitude','Diaphragm Displacement',pyplot,3,suptitle=name)
+        plotter(frequencies,displacements,'Displacement Function Magnitude','Diaphragm Displacement',pyplot,fig,suptitle=name)
 
     return frequencies,displacements
