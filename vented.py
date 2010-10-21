@@ -195,16 +195,52 @@ def xtickmarks(xmin,xmax):
     # Return location and label array slice
     return loc[imin:imax + 1],labels[imin:imax + 1]
 
+def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,suptitle='',ymin=None,ymax=None,ystep=None):
+    # Figure 1 for response plot
+    pyplot.figure(fig)
+    pyplot.semilogx(frequencies,values,basex=10)
 
-def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,plot=None):
+    # Figure 1 title
+    pyplot.suptitle(suptitle)
+    pyplot.title(title)
+
+    pyplot.grid(b=True,which='minor')
+    pyplot.grid(b=True,which='major')
+
+    # Y-axis properties
+    if ymin is not None and ymax is not None:
+        pyplot.ylim(ymin,ymax)
+        if ystep is not None:
+            pyplot.yticks(range(ymin,ymax,ystep))
+    pyplot.ylabel(str(ylabel))
+
+    # X-axis properties
+    pyplot.xlim(frequencies.min(),frequencies.max())
+    loc,labels = xtickmarks(frequencies.min(),frequencies.max()) # Get tick locations and labels
+    pyplot.xticks(loc,labels)
+    pyplot.xlabel('Frequency (Hz.)')
+
+def freq_vals(freq_min,freq_max,res,basex=10):
+    """
+    Returns logarithmically spaced frequencies, from freq_min to freq_min with res number of points in between
+    
+    Returns
+    -------
+    frequency_range : array-like
+    """
+    frequency_values = np.logspace(np.log10(freq_min),np.log10(freq_max),num=res,base=10)
+
+    return frequency_values
+
+def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None):
     """
     Calculates and returns a vented loudspeaker enclosure system's response (gain) values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
     Returns
     -------
-    response_range : array-like
-        Frequencies system response was calculated at
-    response_values : array-like
+    frequencies : array-like
+        Frequencies where system response calculated
+    responses : array-like
         Relative system response gain values, calculated at frequencies in response_range
     """
 
@@ -229,28 +265,21 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name=''
     T0,a1,a2,a3 = alignment_spec(a,h,Ql,Qt,Ts)
 
     # Frequency response range
-    response_range = np.logspace(np.log10(freq_min),np.log10(freq_max),num=res,base=10)
+    frequencies = freq_vals(freq_min,freq_max,res)
 
     # Empty array for frequency response data calculated next
-    response_values = np.array([])
-    """
-    # Empty array for displacement data calculated next
-    displacement_values = np.array([])
+    responses = np.array([])
 
-    # Empty array for impedance data calculated next
-    impedance_values = np.array([])
-    """
     # Generate frequency response values
-    for f in response_range:
-        response_values = np.append(response_values,response(f,T0,a1,a2,a3))
-#        displacement_values = np.append(displacement_values,displacement(f,a,Ql,Qt,Tb,Ts))
-#        impedance_values = np.append(impedance_values,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
+    for f in frequencies:
+        responses = np.append(responses,response(f,T0,a1,a2,a3))
 
     # Plot the response data if given matplotlib plotting object
-    if plot != None:
+    if pyplot != None:
+        """ ** OLD METHOD **
         # Figure 1 for response plot
         plot.figure(1)
-        plot.semilogx(response_range,response_values,basex=10)
+        plot.semilogx(frequencies,responses,basex=10)
 
         # Figure 1 title
         plot.suptitle(name)
@@ -269,70 +298,22 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name=''
         loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
         plot.xticks(loc,labels)
         plot.xlabel('Frequency (Hz.)')
-    """
-        # Create second Y-axis for driver displacement
-#        plot2x = plot.twinx()
-#        plot2x.semilogx(response_range,impedance_values,'k-',linewidth=0.5,basex=10)
+        """
+    plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,1,suptitle=name,ymin=-24,ymax=6,ystep=3)
 
-        # Driver displacement Y-axis properties
-#        plot2x.set_ylabel('Voice Coil Impedance (Ohms)')
-
-        # X-axis labeling must come before twinx() called
-#        plot.xlabel('Frequency (Hz.)')
-
-        # Figure 2 for impedance plot
-        plot.figure(2)
-        plot.semilogx(response_range,impedance_values,basex=10)
-
-        # Figure 1 title
-        plot.suptitle(name)
-        plot.title('Voice Coil Impedance')
-
-        plot.grid(b=True,which='minor')
-        plot.grid(b=True,which='major')
-
-        # Frequency response Y-axis properties
-        plot.ylabel('Impedance (Ohms)')
-
-        # X-axis properties
-        plot.xlim(freq_min,freq_max)
-        loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
-        plot.xticks(loc,labels)
-        plot.xlabel('Frequency (Hz.)')        
-
-        # Figure 3 for diaphragm displacement plot
-        plot.figure(3)
-        plot.semilogx(response_range,displacement_values,basex=10)
-
-        # Figure 3 title
-        plot.suptitle(name)
-        plot.title('Diaphragm Displacement')
-        
-        plot.grid(b=True,which='minor')
-        plot.grid(b=True,which='major')
-        
-        # Y-axis properties
-        plot.ylabel('Displacement Function Magnitude')
-        
-        # X-axis properties
-        plot.xlim(freq_min,freq_max)
-        loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
-        plot.xticks(loc,labels)
-        plot.xlabel('Frequency (Hz.)')
-    """
     # Return system response data
-    return response_range,response_values
+    return frequencies,responses
 
-def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,plot=None):
+def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None):
     """
     Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
     Returns
     -------
-    impedance_range : array-like
-        Frequencies system response was calculated at
-    impedance_values : array-like
-        Relative system response gain values, calculated at frequencies in response_range
+    frequencies : array-like
+        Frequencies where impedances calculated
+    impedances : array-like
+        Calculated vented enclosure driver voice coil impedances
     """
 
     """
@@ -351,25 +332,23 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='
         elif a is not None and h is not None:
             # Generate dependent params via specified a,h
             Fb,Lv,Qt,Tb,Ts = params_align(Fs,Qes,Qms,Vas,D,a,h)
-    
-    # Generate alignment specification parameters
-#    T0,a1,a2,a3 = alignment_spec(a,h,Ql,Qt,Ts)
 
     # Frequency range
-    impedance_range = np.logspace(np.log10(freq_min),np.log10(freq_max),num=res,base=10)
+    frequencies = freq_vals(freq_min,freq_max,res)
 
     # Empty array for impedance data calculated next
-    impedance_values = np.array([])
+    impedances = np.array([])
 
     # Generate frequency response values
-    for f in impedance_range:
-        impedance_values = np.append(impedance_values,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
+    for f in frequencies:
+        impedances = np.append(impedances,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
 
     # Plot the impedance data if given matplotlib plotting object
-    if plot != None:
+    if pyplot != None:
+        """ ** OLD **
         # Figure 2 for impedance plot
         plot.figure(2)
-        plot.semilogx(impedance_range,impedance_values,basex=10)
+        plot.semilogx(frequencies,impedances,basex=10)
 
         # Figure 2 title
         plot.suptitle(name)
@@ -386,19 +365,21 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='
         loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
         plot.xticks(loc,labels)
         plot.xlabel('Frequency (Hz.)')
+        """
+        plotter(frequencies,impedances,'Impedance (Ohms)','Voice Coil Impedance',pyplot,2,suptitle=name)
 
-    return impedance_range,impedance_values
+    return frequencies,impedances
 
-def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,plot=None):
+def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None):
     """
     Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
     Returns
     -------
-    displacement_range : array-like
-        Frequencies system response was calculated at
-    displacement_values : array-like
-        Relative system response gain values, calculated at frequencies in response_range
+    frequencies : array-like
+        Frequencies where displacements calculated
+    displacements : array-like
+        Displacement function magnitude
     """
 
     """
@@ -417,25 +398,23 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,nam
         elif a is not None and h is not None:
             # Generate dependent params via specified a,h
             Fb,Lv,Qt,Tb,Ts = params_align(Fs,Qes,Qms,Vas,D,a,h)
-    
-    # Generate alignment specification parameters
-#    T0,a1,a2,a3 = alignment_spec(a,h,Ql,Qt,Ts)
 
     # Frequency range
-    displacement_range = np.logspace(np.log10(freq_min),np.log10(freq_max),num=res,base=10)
+    frequencies = freq_vals(freq_min,freq_max,res)
 
     # Empty array for impedance data calculated next
-    displacement_values = np.array([])
+    displacements = np.array([])
 
     # Generate frequency response values
-    for f in displacement_range:
-        displacement_values = np.append(displacement_values,displacement(f,a,Ql,Qt,Tb,Ts))
+    for f in frequencies:
+        displacements = np.append(displacements,displacement(f,a,Ql,Qt,Tb,Ts))
 
     # Plot the impedance data if given matplotlib plotting object
-    if plot != None:
+    if pyplot != None:
+        """ ** OLD ***
         # Figure 3 for diaphragm displacement plot
         plot.figure(3)
-        plot.semilogx(displacement_range,displacement_values,basex=10)
+        plot.semilogx(frequencies,displacements,basex=10)
 
         # Figure 3 title
         plot.suptitle(name)
@@ -452,5 +431,7 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,nam
         loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
         plot.xticks(loc,labels)
         plot.xlabel('Frequency (Hz.)')
+        """
+        plotter(frequencies,displacements,'Displacement Function Magnitude','Diaphragm Displacement',pyplot,3,suptitle=name)
 
-    return displacement_range,displacement_values
+    return frequencies,displacements
