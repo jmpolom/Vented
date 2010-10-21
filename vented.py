@@ -14,7 +14,7 @@ import numpy as np
 
 __author__ = 'Jonathan Polom <s0nic0nslaught@gmail.com>'
 __date__ = datetime.date(2010, 10, 19)
-__version__ = 0.6
+__version__ = 0.8
 
 def params_calc(Fs,Qes,Qms,Vas,D,Vb,Lv):
     """
@@ -22,23 +22,23 @@ def params_calc(Fs,Qes,Qms,Vas,D,Vb,Lv):
 
     Returns
     -------
-    a : float
-        System compliance ratio
     Fb : float
         Enclosure tuning frequency
-    h : float
-        System tuning ratio
     Qt : float
         Total system Q
     Tb : float
         Inverted system tuning angual frequency
     Ts : float
         Inverted driver resonance angular frequency
+    a : float
+        System compliance ratio
+    h : float
+        System tuning ratio
     """
     Vb_ci = 1000/(2.54**3)*Vb # Convert enclosure volume from liters to in.^3
     R = D/2 # Convert vent diameter to radius
 
-#    Fb = np.sqrt((1.463e7*R)/(Vb_ci * (Lv + 1.463*R))) # Needs volume in in.^3
+#    Fb = np.sqrt((1.463e7*R)/(Vb_ci * (Lv + 1.463*R))) # Bad correction factor
     Fb = np.sqrt((1.464e7*R)/(Vb_ci*Lv)) # Fb from port. Needs volume in in.^3
     Tb = 1/(2*np.pi*Fb) # Inverse of angular frequencies
     Ts = 1/(2*np.pi*Fs)
@@ -135,7 +135,6 @@ def displacement(f,a,Ql,Qt,Tb,Ts):
     denom = s**4*Tb**2*Ts**2 + s**3*(Tb**2*Ts/Qt + Tb*Ts**2/Ql) + s**2*((a + 1)*Tb**2 + (Tb*Ts)/(Ql*Qt) + Ts**2) + s*(Tb/Ql + Ts/Qt) + 1
 
     displacement = np.sqrt((num/denom).real**2 + (num/denom).imag**2)
-#    dB = 10*np.log10(displacement)
 
     return displacement
 
@@ -196,6 +195,9 @@ def xtickmarks(xmin,xmax):
     return loc[imin:imax + 1],labels[imin:imax + 1]
 
 def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,suptitle='',ymin=None,ymax=None,ystep=None):
+    """
+    Generalized plotting function. Standardizes x-axis tickmark values, range and a few other things.
+    """
     # Figure 1 for response plot
     pyplot.figure(fig)
     pyplot.semilogx(frequencies,values,basex=10)
@@ -276,30 +278,7 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name=''
 
     # Plot the response data if given matplotlib plotting object
     if pyplot != None:
-        """ ** OLD METHOD **
-        # Figure 1 for response plot
-        plot.figure(1)
-        plot.semilogx(frequencies,responses,basex=10)
-
-        # Figure 1 title
-        plot.suptitle(name)
-        plot.title('Frequency Response')
-
-        plot.grid(b=True,which='minor')
-        plot.grid(b=True,which='major')
-
-        # Frequency response Y-axis properties
-        plot.ylim(-24,6)
-        plot.yticks(range(-24,9,3))
-        plot.ylabel('Response Level (dB)')
-
-        # X-axis properties
-        plot.xlim(freq_min,freq_max)
-        loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
-        plot.xticks(loc,labels)
-        plot.xlabel('Frequency (Hz.)')
-        """
-    plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,fig,suptitle=name,ymin=-24,ymax=6,ystep=3)
+        plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,fig,suptitle=name,ymin=-24,ymax=6,ystep=3)
 
     # Return system response data
     return frequencies,responses
@@ -345,27 +324,6 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
-        """ ** OLD **
-        # Figure 2 for impedance plot
-        plot.figure(2)
-        plot.semilogx(frequencies,impedances,basex=10)
-
-        # Figure 2 title
-        plot.suptitle(name)
-        plot.title('Voice Coil Impedance')
-
-        plot.grid(b=True,which='minor')
-        plot.grid(b=True,which='major')
-
-        # Frequency response Y-axis properties
-        plot.ylabel('Impedance (Ohms)')
-
-        # X-axis properties
-        plot.xlim(freq_min,freq_max)
-        loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
-        plot.xticks(loc,labels)
-        plot.xlabel('Frequency (Hz.)')
-        """
         plotter(frequencies,impedances,'Impedance (Ohms)','Voice Coil Impedance',pyplot,fig,suptitle=name)
 
     return frequencies,impedances
@@ -411,27 +369,6 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,nam
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
-        """ ** OLD ***
-        # Figure 3 for diaphragm displacement plot
-        plot.figure(3)
-        plot.semilogx(frequencies,displacements,basex=10)
-
-        # Figure 3 title
-        plot.suptitle(name)
-        plot.title('Diaphragm Displacement')
-        
-        plot.grid(b=True,which='minor')
-        plot.grid(b=True,which='major')
-        
-        # Y-axis properties
-        plot.ylabel('Displacement Function Magnitude')
-        
-        # X-axis properties
-        plot.xlim(freq_min,freq_max)
-        loc,labels = xtickmarks(freq_min,freq_max) # Get tick locations and labels
-        plot.xticks(loc,labels)
-        plot.xlabel('Frequency (Hz.)')
-        """
         plotter(frequencies,displacements,'Displacement Function Magnitude','Diaphragm Displacement',pyplot,fig,suptitle=name)
 
     return frequencies,displacements
