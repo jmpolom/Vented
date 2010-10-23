@@ -17,5 +17,10 @@ D = 4.0     # Enclosure vent internal radius, in inches
 Vb = 81.84  # Enclosure volume, in liters
 # Use default enclosure loss factor, Ql=7
 
-vented.response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,name=name,freq_max=500,plot=plt)
+vented.response_plot(Fs,Qes,Qms,Re,Vas,D,Vb=Vb,Lv=Lv,name=name,freq_max=500,pyplot=plt)
+vented.response_plot(Fs,Qes,Qms,Re,Vas,D,a=1.5109,h=1.0667,Vb=Vb,Lv=Lv,name=name,freq_max=500,pyplot=plt)
+vented.impedance_plot(Fs,Qes,Qms,Re,Vas,D,Vb=Vb,Lv=Lv,name=name,freq_max=500,pyplot=plt)
+vented.impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=1.5109,h=1.0667,Vb=Vb,Lv=Lv,name=name,freq_max=500,pyplot=plt)
+vented.displacement_plot(Fs,Qes,Qms,Re,Vas,D,Vb=Vb,Lv=Lv,name=name,freq_max=500,pyplot=plt)
+vented.displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=1.5109,h=1.0667,Vb=Vb,Lv=Lv,name=name,freq_max=500,pyplot=plt)
 plt.show()
