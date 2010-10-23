@@ -173,6 +173,8 @@ def response_plot(Fs,Qes,Qms,Re,Vas,Vb,Lv,D,Ql=7,name='',freq_min=10,freq_max=20
         Frequencies system response was calculated at
     response_values : array-like
         Relative system response gain values, calculated at frequencies in response_range
+    impedance_values : array-like
+    displacement_values : array-like
     """
 
     """
