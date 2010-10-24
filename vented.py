@@ -194,16 +194,21 @@ def xtickmarks(xmin,xmax):
     # Return location and label array slice
     return loc[imin:imax + 1],labels[imin:imax + 1]
 
-def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,suptitle='',ymin=None,ymax=None,ystep=None):
+def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,label=None,suptitle=None,ymin=None,ymax=None,ystep=None):
     """
     Generalized plotting function. Standardizes x-axis tickmark values, range and a few other things.
     """
-    # Figure 1 for response plot
+    # Figure for plot
     pyplot.figure(fig)
-    pyplot.semilogx(frequencies,values,basex=10)
+    if label is not None:
+        pyplot.semilogx(frequencies,values,label=label,basex=10)
+        pyplot.legend()
+    else:
+        pyplot.semilogx(frequencies,values,basex=10)
 
-    # Figure 1 title
-    pyplot.suptitle(suptitle)
+    # Figure titles
+    if suptitle is not None:
+        pyplot.suptitle(suptitle)
     pyplot.title(title)
 
     pyplot.grid(b=True,which='minor')
@@ -234,7 +239,7 @@ def freq_vals(freq_min,freq_max,res,basex=10):
 
     return frequency_values
 
-def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=1):
+def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=1):
     """
     Calculates and returns a vented loudspeaker enclosure system's response (gain) values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -280,12 +285,12 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name=''
 
     # Plot the response data if given matplotlib plotting object
     if pyplot != None:
-        plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,fig,suptitle=name,ymin=-24,ymax=6,ystep=3)
+        plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,fig,label=label,suptitle=suptitle,ymin=-24,ymax=6,ystep=3)
 
     # Return system response data
     return frequencies,responses
 
-def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=2):
+def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=2):
     """
     Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -326,11 +331,11 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
-        plotter(frequencies,impedances,'Impedance (Ohms)','Voice Coil Impedance',pyplot,fig,suptitle=name)
+        plotter(frequencies,impedances,'Impedance (Ohms)','Voice Coil Impedance',pyplot,fig,label=label,suptitle=suptitle)
 
     return frequencies,impedances
 
-def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,name='',freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=3):
+def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=3):
     """
     Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
 
@@ -371,6 +376,6 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,nam
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
-        plotter(frequencies,displacements,'Displacement Function Magnitude','Diaphragm Displacement',pyplot,fig,suptitle=name)
+        plotter(frequencies,displacements,'Displacement Function Magnitude','Diaphragm Displacement',pyplot,fig,label=label,suptitle=suptitle)
 
     return frequencies,displacements
