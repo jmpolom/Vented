@@ -218,7 +218,7 @@ def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,label=None,supti
     if ymin is not None and ymax is not None:
         pyplot.ylim(ymin,ymax)
         if ystep is not None:
-            pyplot.yticks(range(ymin,ymax,ystep))
+            pyplot.yticks(np.arange(ymin,ymax+ystep,ystep))
     pyplot.ylabel(str(ylabel))
 
     # X-axis properties
