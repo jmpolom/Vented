@@ -1,24 +1,131 @@
 #!/usr/bin/python
 
 """
-vented.py provides functions that calculate the approximate (model predicted), theoretical frequency response of a vented box loudspeaker system. The script uses mathematical model analysis results from A. N. Theile and Richard Small, as published in 'Loudspeakers in Vented Boxes' and 'Vented Box Loudspeaker Systems', respectively.
+vented.py provides functions that calculate model predicted frequency 
+response of a vented box loudspeaker system. This script uses electro-
+acoustic model analysis results from A. N. Theile and Richard Small, 
+as published in 'Loudspeakers in Vented Boxes' and 'Vented Box 
+Loudspeaker Systems', respectively.
 
-Script Name:    vented_box.py
-Author:         Jonathan Polom
-Date Created:   8 October 2010
-License:        GNU General Public License
+vented.pyc : vented loudspeaker enclosure response calculator
+Copyright (C) 2010 Jon Polom <s0nic0nslaught@gmail.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import datetime
-import numpy as np
+from numpy import append,array,log10,logspace,pi,sqrt
+from scipy.optimize import fixed_point,fsolve
+from scipy.special import cbrt
 
-__author__ = 'Jonathan Polom <s0nic0nslaught@gmail.com>'
+__author__ = "Jonathan Polom <s0nic0nslaught@gmail.com>"
 __date__ = datetime.date(2010, 10, 19)
-__version__ = 0.8
+__version__ = '0.8'
+__license__ = "GNU General Public License"
+
+def __calc_d(d,a1,a2,a3):
+    A1 = a1**2 - 2*a2
+    A2 = a2**2 + 2 - 2*a1*a3
+    A3 = a3**2 - 2*a2
+
+    return d**4 - A1*d**3 - A2*d**2 - A3*d -1
+
+def __calc_r(r,c1,c2):
+    return r**4 - c1*r**3 + c2*r - 1
+
+def __calc_h(a1,a2,a3,Ql=7):
+    # unverified function
+    Ql = float(Ql)
+
+    c1 = a1*Ql
+    c2 = a3*Ql
+
+    r = fixed_point(__calc_r,0,args=(c1,c2))
+    h = r**2
+    return h
+
+def __calc_f3(a1,a2,a3,T0):
+    # unverified function
+    d = fixed_point(__calc_d,0,args=(a1,a2,a3))
+    f0 = 1/(2*pi*T0)
+    f3 = sqrt(d)*f0
+    
+    return f3
+
+def __calc_a(a,h,Qes,Qms,Ql=7):
+    Qt = Qes*Qms/(Qes + Qms)
+    
+    return (h + (a + 1 + h**2)*Ql*Qt)/(h*Ql*Qt)
+
+def __calc_h_a1(h,Qes,Qms,Ql=7):
+    Qt = Qes*Qms/(Qes + Qms)
+    Ql = float(Ql)
+
+    return (Ql + h*Qt)/(sqrt(h)*Ql*Qt)
+
+def __calc_h_a3(h,Qes,Qms,Ql=7):
+    Qt = Qes*Qms/(Qes + Qms)
+    Ql = float(Ql)
+
+    return (h*Ql + Qt)/(sqrt(h)*Ql*Qt)
+
+def __calc_K_c4(K):
+    return (1 + K**4/(64 + 28*K + 80*K**2 + 16*K**3))
+
+def __calc_D_c4(k):
+    return (k**4 + 6*k**2 + 1)/8
+
+def __calc_B_qb3(a2):
+    a1 = sqrt(2*a2)
+    a3 = (a2**2 + 2)/2*a1
+    
+    return sqrt(a3**2 - 2*a2)
+
+def filter_coeffs(a,h,Ql,Qt):
+    """    
+    Calculates filter coefficients a1, a2, and a3 from alignment parameters
+
+    Returns
+    -------
+    a1 : float
+    a2 : float
+    a3 : float
+    """
+    a1 = (Ql + h*Qt)/(sqrt(h)*Ql*Qt)
+    a2 = (h + (a + 1 + h**2)*Ql*Qt)/(h*Ql*Qt)
+    a3 = (h*Ql + Qt)/(sqrt(h)*Ql*Qt)
+
+    return a1,a2,a3
+
+def time_constant(h,Ts):
+    """
+    Calculates filter time constant T0 from tuning ratio and angular period
+    of frequency driver free air resonance
+    
+    Returns
+    -------
+    T0 : float
+    """
+    T0 = Ts/sqrt(h)
+
+    return T0
 
 def params_calc(Fs,Qes,Qms,Vas,D,Vb,Lv):
     """
-    Calculates dependent system parameters: enclosure tuning frequency, system tuning ratio, system compliance ratio, and the inverted driver resonance angular frequency
+    Calculates dependent system parameters: enclosure tuning frequency, 
+    system tuning ratio, system compliance ratio, and the inverted driver 
+    resonance angular frequency
 
     Returns
     -------
@@ -38,10 +145,10 @@ def params_calc(Fs,Qes,Qms,Vas,D,Vb,Lv):
     Vb_ci = 1000/(2.54**3)*Vb # Convert enclosure volume from liters to in.^3
     R = D/2 # Convert vent diameter to radius
 
-#    Fb = np.sqrt((1.463e7*R)/(Vb_ci * (Lv + 1.463*R))) # Bad correction factor
-    Fb = np.sqrt((1.464e7*R)/(Vb_ci*Lv)) # Fb from port. Needs volume in in.^3
-    Tb = 1/(2*np.pi*Fb) # Inverse of angular frequencies
-    Ts = 1/(2*np.pi*Fs)
+#    Fb = sqrt((1.463e7*R)/(Vb_ci * (Lv + 1.463*R))) # Bad correction factor
+    Fb = sqrt((1.464e7*R)/(Vb_ci*Lv)) # Fb from port. Needs volume in in.^3
+    Tb = 1/(2*pi*Fb) # Inverse of angular frequencies
+    Ts = 1/(2*pi*Fs)
 
     h = Fb/Fs # Tuning ratio
     a = Vas/Vb # Compliance ratio
@@ -52,7 +159,9 @@ def params_calc(Fs,Qes,Qms,Vas,D,Vb,Lv):
 
 def params_align(Fs,Qes,Qms,Vas,D,a,h):
     """
-    Calculates dependent system parameters: enclosure tuning frequency, system tuning ratio, system compliance ratio, and the inverted driver resonance angular frequency
+    Calculates dependent system parameters: enclosure tuning frequency, 
+    system tuning ratio, system compliance ratio, and the inverted driver 
+    resonance angular frequency
 
     Returns
     -------
@@ -71,8 +180,8 @@ def params_align(Fs,Qes,Qms,Vas,D,a,h):
     R = D/2 # Convert vent diameter to radius
 
     Fb = h*Fs # Calculate enclosure tuning frequency from tuning ratio
-    Tb = 1/(2*np.pi*Fb) # Inverse of angular frequencies
-    Ts = 1/(2*np.pi*Fs)
+    Tb = 1/(2*pi*Fb) # Inverse of angular frequencies
+    Ts = 1/(2*pi*Fs)
 
     Vb = Vas/a # Compliance ratio
 
@@ -83,45 +192,69 @@ def params_align(Fs,Qes,Qms,Vas,D,a,h):
 
     return Fb,Lv,Qt,Tb,Ts
 
-def alignment_spec(a,h,Ql,Qt,Ts):
-    """    
-    Calculates alignment specification parameters T0, a1, a2, and a3
+def params_resp(Fs,Qes,Qms,Vas,D,resp='qb3',db_ripple=0.01,B=1.00):
+    if resp == 'b4':
+        a1 = sqrt(4 + 2*sqrt(2))
+        a2 = 2 + sqrt(2)
+        a3 = a1
+    if resp == 'bl4':
+        a1 = 3.20108
+        a2 = 4.39155
+        a3 = 3.12394
+    if resp == 'c4':
+        ripple = db_ripple / 10.00
+        K = fixed_point(__calc_K_c4,ripple)
+        k = sqrt(1/(K+1))
+        
+        a3 = k*sqrt(4 + 2*sqrt(2))/cbrt(__calc_D_c4(k))
+        a2 = 1 + k**2*(1 + sqrt(2))/sqrt(__calc_D_c4(k))
+        a1 = (a3/sqrt(__calc_D_c4(k)))*(1 - (1 - k**2)/(2*sqrt(2)))
+    if resp == 'qb3':
+        a2 = fixed_point(__calc_B_qb3,B)
+        a1 = sqrt(2*a2)
+        a3 = (a2**2 + 2)/2*a1
+        
+    h = fixed_point(__calc_h_a1,a1,args=(Qes,Qms))
+    a = fixed_point(__calc_a,a2,args=(h,Qes,Qms))
 
-    Returns
-    -------
-    T0 : float
-    a1 : float
-    a2 : float
-    a3 : float
-    """
-    T0 = Ts/np.sqrt(h)
-    a1 = (Ql + h*Qt)/(np.sqrt(h)*Ql*Qt)
-    a2 = (h + (a + 1 + h**2)*Ql*Qt)/(h*Ql*Qt)
-    a3 = (h*Ql + Qt)/(np.sqrt(h)*Ql*Qt)
+    R = D/2 # Convert vent diameter to radius
 
-    return T0,a1,a2,a3
+    Fb = h*Fs # Calculate enclosure tuning frequency from tuning ratio
+    Tb = 1/(2*pi*Fb) # Inverse of angular frequencies
+    Ts = 1/(2*pi*Fs)
+
+    Vb = Vas/a # Compliance ratio
+
+    Vb_ci = 1000/(2.54**3)*Vb # Convert enclosure volume from liters to in.^3
+    Lv = (1.464e7*R)/(Vb_ci*Fb**2) # Vent length calculation, in units of R
+
+    Qt = Qes*Qms/(Qes + Qms) # Approximate total system Q (Qt) with total driver Q (Qts)
+    
+    return Fb,Lv,Qt,Tb,Ts,a,h
 
 def response(f,T0,a1,a2,a3):
     """
-    System frequency response function, equation (20) in 'Vented Box Loudspeaker Systems'
+    System frequency response function, equation (20) in 'Vented Box 
+    Loudspeaker Systems'
 
     Returns
     -------
     dB : float
         Relative system response gain, in decibels
     """
-    s = complex(0,2*np.pi*f)
+    s = complex(0,2*pi*f)
 
     num = s**4 * T0**4
     denom = s**4 * T0**4 + a1 * s**3 * T0**3 + a2 * s**2 * T0**2 + a3 * s * T0 + 1
-    gain = np.sqrt((num/denom).real**2 + (num/denom).imag**2)
-    dB = 10*np.log10(gain)
+    gain = sqrt((num/denom).real**2 + (num/denom).imag**2)
+    dB = 10*log10(gain)
 
     return dB
 
 def displacement(f,a,Ql,Qt,Tb,Ts):
     """
-    Diaphragm displacement function, equation (14) in 'Vented Box Loudspeaker Systems'
+    Diaphragm displacement function, equation (14) in 'Vented Box 
+    Loudspeaker Systems'
 
     Returns
     -------
@@ -129,18 +262,19 @@ def displacement(f,a,Ql,Qt,Tb,Ts):
         Normalized displacement value
     """
 
-    s = complex(0,2*np.pi*f)
+    s = complex(0,2*pi*f)
 
     num = s**2*Tb**2 + s*Tb/Ql + 1
     denom = s**4*Tb**2*Ts**2 + s**3*(Tb**2*Ts/Qt + Tb*Ts**2/Ql) + s**2*((a + 1)*Tb**2 + (Tb*Ts)/(Ql*Qt) + Ts**2) + s*(Tb/Ql + Ts/Qt) + 1
 
-    displacement = np.sqrt((num/denom).real**2 + (num/denom).imag**2)
+    displacement = sqrt((num/denom).real**2 + (num/denom).imag**2)
 
     return displacement
 
 def impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts):
     """
-    Voice coil impedance function, equation (16) in 'Vented Box Loudspeaker Systems'
+    Voice coil impedance function, equation (16) in 'Vented Box 
+    Loudspeaker Systems'
 
     Returns
     -------
@@ -148,14 +282,14 @@ def impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts):
         Voice coil impedance value, in ohms
     """
 
-    s = complex(0,2*np.pi*f)
+    s = complex(0,2*pi*f)
 
     num = s*(Ts/Qms)*(s**2*Tb**2 + s*Tb/Ql + 1)
     denom = s**4*Tb**2*Ts**2 + s**3*(Tb**2*Ts/Qms + Tb*Ts**2/Ql) + s**2*((a + 1)*Tb**2 + (Tb*Ts)/(Ql*Qms) + Ts**2) + s*(Tb/Ql + Ts/Qms) + 1
 
     Res = float(Re)*(Qms/Qes)
 
-    impedance = float(Re) + Res*np.sqrt((num/denom).real**2 + (num/denom).imag**2)
+    impedance = float(Re) + Res*sqrt((num/denom).real**2 + (num/denom).imag**2)
 
     return impedance
 
@@ -196,7 +330,8 @@ def xtickmarks(xmin,xmax):
 
 def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,label=None,suptitle=None,ymin=None,ymax=None,ystep=None):
     """
-    Generalized plotting function. Standardizes x-axis tickmark values, range and a few other things.
+    Generalized plotting function. Standardizes x-axis tickmark values, 
+    range and a few other things.
     """
     # Figure for plot
     pyplot.figure(fig)
@@ -229,39 +364,47 @@ def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,label=None,supti
 
 def freq_vals(freq_min,freq_max,res,basex=10):
     """
-    Returns logarithmically spaced frequencies, from freq_min to freq_min with res number of points in between
+    Returns logarithmically spaced frequencies, from freq_min to freq_min 
+    with res number of points in between
     
     Returns
     -------
     frequency_range : array-like
     """
-    frequency_values = np.logspace(np.log10(freq_min),np.log10(freq_max),num=res,base=10)
+    frequency_values = logspace(log10(freq_min),log10(freq_max),num=res,base=10)
 
     return frequency_values
 
-def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=1):
+def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
+                  resp='qb3',db_ripple=0.01,B=1.00,label=None,
+                  suptitle=None,freq_min=10,freq_max=20000,
+                  res=1000,pyplot=None,fig=1):
     """
-    Calculates and returns a vented loudspeaker enclosure system's response (gain) values over the specified frequency range (default range is 10 Hz to 20 kHz).
+    Calculates and returns a vented loudspeaker enclosure system's 
+    response (gain) values over the specified frequency range (default 
+    range is 10 Hz to 20 kHz).
 
     Returns
     -------
     frequencies : array-like
         Frequencies where system response calculated
     responses : array-like
-        Relative system response gain values, calculated at frequencies in response_range
+        Relative system response gain values, calculated at frequencies in 
+        response_range
     impedance_values : array-like
     displacement_values : array-like
     """
 
     """
     Three cases:
-        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are user-specified -> create alignment accordingly starting with calculation of Fb from Lv and D
-        2) Fs, Qes, Qms, Vas, and D are user-specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
-        3) Fs, Qes, Qms, Vas, and D are user-specified, along with a and h -> create alignment using a and h values specified
+        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are specified -> create alignment accordingly starting with calculation of Fb from Lv and D
+        2) Fs, Qes, Qms, Vas, and D are specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
+        3) Fs, Qes, Qms, Vas, and D are specified, along with a and h -> create alignment using a and h values specified
     """
 
     if a is None and h is None and Lv is None and Vb is None:
-        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Re,Vas,D)
+        Fb,Lv,Qt,Tb,Ts,a,h = params_resp(Fs,Qes,Qms,Vas,D,
+                                         resp=resp,db_ripple=db_ripple,B=B)
     elif Lv is not None and Vb is not None:
         if a is None and h is None:
             # Generate dependent params via vent tuning equation
@@ -271,17 +414,18 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=N
             Fb,Lv,Qt,Tb,Ts = params_align(Fs,Qes,Qms,Vas,D,a,h)
 
     # Generate alignment specification parameters
-    T0,a1,a2,a3 = alignment_spec(a,h,Ql,Qt,Ts)
+    T0 = time_constant(h,Ts)
+    a1,a2,a3 = filter_coeffs(a,h,Ql,Qt)
 
     # Frequency response range
     frequencies = freq_vals(freq_min,freq_max,res)
 
     # Empty array for frequency response data calculated next
-    responses = np.array([])
+    responses = array([])
 
     # Generate frequency response values
     for f in frequencies:
-        responses = np.append(responses,response(f,T0,a1,a2,a3))
+        responses = append(responses,response(f,T0,a1,a2,a3))
 
     # Plot the response data if given matplotlib plotting object
     if pyplot != None:
@@ -292,7 +436,9 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=N
 
 def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=2):
     """
-    Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
+    Calculates and returns a vented loudspeaker enclosure driver's 
+    impedance values over the specified frequency range (default range is 
+    10 Hz to 20 kHz).
 
     Returns
     -------
@@ -304,9 +450,9 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=
 
     """
     Three cases:
-        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are user-specified -> create alignment accordingly starting with calculation of Fb from Lv and D
-        2) Fs, Qes, Qms, Vas, and D are user-specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
-        3) Fs, Qes, Qms, Vas, and D are user-specified, along with a and h -> create alignment using a and h values specified
+        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are specified -> create alignment accordingly starting with calculation of Fb from Lv and D
+        2) Fs, Qes, Qms, Vas, and D are specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
+        3) Fs, Qes, Qms, Vas, and D are specified, along with a and h -> create alignment using a and h values specified
     """
 
     if a is None and h is None and Lv is None and Vb is None:
@@ -323,11 +469,11 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=
     frequencies = freq_vals(freq_min,freq_max,res)
 
     # Empty array for impedance data calculated next
-    impedances = np.array([])
+    impedances = array([])
 
     # Generate frequency response values
     for f in frequencies:
-        impedances = np.append(impedances,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
+        impedances = append(impedances,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
@@ -337,7 +483,9 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=
 
 def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=3):
     """
-    Calculates and returns a vented loudspeaker enclosure driver's impedance values over the specified frequency range (default range is 10 Hz to 20 kHz).
+    Calculates and returns a vented loudspeaker enclosure driver's 
+    impedance values over the specified frequency range (default range is 
+    10 Hz to 20 kHz).
 
     Returns
     -------
@@ -349,9 +497,9 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,lab
 
     """
     Three cases:
-        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are user-specified -> create alignment accordingly starting with calculation of Fb from Lv and D
-        2) Fs, Qes, Qms, Vas, and D are user-specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
-        3) Fs, Qes, Qms, Vas, and D are user-specified, along with a and h -> create alignment using a and h values specified
+        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are specified -> create alignment accordingly starting with calculation of Fb from Lv and D
+        2) Fs, Qes, Qms, Vas, and D are specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
+        3) Fs, Qes, Qms, Vas, and D are specified, along with a and h -> create alignment using a and h values specified
     """
 
     if a is None and h is None and Lv is None and Vb is None:
@@ -368,11 +516,11 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,lab
     frequencies = freq_vals(freq_min,freq_max,res)
 
     # Empty array for impedance data calculated next
-    displacements = np.array([])
+    displacements = array([])
 
     # Generate frequency response values
     for f in frequencies:
-        displacements = np.append(displacements,displacement(f,a,Ql,Qt,Tb,Ts))
+        displacements = append(displacements,displacement(f,a,Ql,Qt,Tb,Ts))
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
