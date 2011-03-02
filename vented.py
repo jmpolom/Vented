@@ -194,43 +194,8 @@ def params_align(Fs,Qes,Qms,Vas,D,a,h):
 
     return Fb,Lv,Qt,Tb,Ts
 
-def params_resp(Fs,Qes,Qms,Vas,D,resp='qb3',db_ripple=0.01,B=1.00):
-    if resp == 'b4':
-        a1 = sqrt(4 + 2*sqrt(2))
-        a2 = 2 + sqrt(2)
-        a3 = a1
-    if resp == 'bl4':
-        a1 = 3.20108
-        a2 = 4.39155
-        a3 = 3.12394
-    if resp == 'c4':
-        k = 1.2
-        
-        a3 = k*sqrt(4 + 2*sqrt(2))/cbrt(__calc_D_c4(k))
-        a2 = 1 + k**2*(1 + sqrt(2))/sqrt(__calc_D_c4(k))
-        a1 = (a3/sqrt(__calc_D_c4(k)))*(1 - (1 - k**2)/(2*sqrt(2)))
-    if resp == 'qb3':
-        a2 = fixed_point(__calc_B_qb3,B)
-        a1 = sqrt(2*a2)
-        a3 = (a2**2 + 2)/2*a1
-        
-    h = fixed_point(__calc_h_a1,a1,args=(Qes,Qms))
-    a = fixed_point(__calc_a,a2,args=(h,Qes,Qms))
-
-    R = D/2 # Convert vent diameter to radius
-
-    Fb = h*Fs # Calculate enclosure tuning frequency from tuning ratio
-    Tb = 1/(2*pi*Fb) # Inverse of angular frequencies
-    Ts = 1/(2*pi*Fs)
-
-    Vb = Vas/a # Compliance ratio
-
-    Vb_ci = 1000/(2.54**3)*Vb # Convert enclosure volume from liters to in.^3
-    Lv = (1.464e7*R)/(Vb_ci*Fb**2) # Vent length calculation, in units of R
-
-    Qt = Qes*Qms/(Qes + Qms) # Approximate total system Q (Qt) with total driver Q (Qts)
-    
-    return Fb,Lv,Qt,Tb,Ts,a,h,k
+def params_lookup(Fs,Qes,Qms,Vas,D,resp='qb3'):
+    return NotImplementedError
 
 def response(f,T0,a1,a2,a3):
     """
@@ -328,7 +293,8 @@ def xtickmarks(xmin,xmax):
     # Return location and label array slice
     return loc[imin:imax + 1],labels[imin:imax + 1]
 
-def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,label=None,suptitle=None,ymin=None,ymax=None,ystep=None):
+def plotter(frequencies,values,ylabel,title,pyplot,fig,basex=10,
+            label=None,suptitle=None,ymin=None,ymax=None,ystep=None):
     """
     Generalized plotting function. Standardizes x-axis tickmark values, 
     range and a few other things.
@@ -376,9 +342,8 @@ def freq_vals(freq_min,freq_max,res,basex=10):
     return frequency_values
 
 def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
-                  resp='qb3',db_ripple=0.01,B=1.00,label=None,
-                  suptitle=None,freq_min=10,freq_max=20000,
-                  res=1000,pyplot=None,fig=1):
+                  resp='qb3',label=None,suptitle=None,freq_min=10,
+                  freq_max=20000,res=1000,pyplot=None,fig=1):
     """
     Calculates and returns a vented loudspeaker enclosure system's 
     response (gain) values over the specified frequency range (default 
@@ -403,8 +368,7 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
     """
 
     if a is None and h is None and Lv is None and Vb is None:
-        Fb,Lv,Qt,Tb,Ts,a,h = params_resp(Fs,Qes,Qms,Vas,D,
-                                         resp=resp,db_ripple=db_ripple,B=B)
+        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Vas,D,resp=resp)
     elif Lv is not None and Vb is not None:
         if a is None and h is None:
             # Generate dependent params via vent tuning equation
@@ -429,12 +393,16 @@ def response_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
 
     # Plot the response data if given matplotlib plotting object
     if pyplot != None:
-        plotter(frequencies,responses,'Response Level (dB)','Frequency Response',pyplot,fig,label=label,suptitle=suptitle,ymin=-24,ymax=6,ystep=3)
+        plotter(frequencies,responses,'Response Level (dB)',
+                'Frequency Response',pyplot,fig,label=label,suptitle=suptitle,
+                ymin=-24,ymax=6,ystep=3)
 
     # Return system response data
     return frequencies,responses
 
-def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=2):
+def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,
+                   Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,
+                   freq_max=20000,res=1000,pyplot=None,fig=2):
     """
     Calculates and returns a vented loudspeaker enclosure driver's 
     impedance values over the specified frequency range (default range is 
@@ -456,7 +424,7 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=
     """
 
     if a is None and h is None and Lv is None and Vb is None:
-        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Re,Vas,D)
+        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Vas,D,resp=resp)
     elif Lv is not None and Vb is not None:
         if a is None and h is None:
             # Generate dependent params via vent tuning equation
@@ -477,11 +445,14 @@ def impedance_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
-        plotter(frequencies,impedances,'Impedance (Ohms)','Voice Coil Impedance',pyplot,fig,label=label,suptitle=suptitle)
+        plotter(frequencies,impedances,'Impedance (Ohms)',
+                'Voice Coil Impedance',pyplot,fig,label=label,suptitle=suptitle)
 
     return frequencies,impedances
 
-def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=3):
+def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,
+                      Lv=None,Vb=None,Ql=7,label=None,suptitle=None,
+                      freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=3):
     """
     Calculates and returns a vented loudspeaker enclosure driver's 
     impedance values over the specified frequency range (default range is 
@@ -503,7 +474,7 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,lab
     """
 
     if a is None and h is None and Lv is None and Vb is None:
-        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Re,Vas,D)
+        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Vas,D,resp=resp)
     elif Lv is not None and Vb is not None:
         if a is None and h is None:
             # Generate dependent params via vent tuning equation
@@ -524,6 +495,8 @@ def displacement_plot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,lab
 
     # Plot the impedance data if given matplotlib plotting object
     if pyplot != None:
-        plotter(frequencies,displacements,'Displacement Function Magnitude','Diaphragm Displacement',pyplot,fig,label=label,suptitle=suptitle)
+        plotter(frequencies,displacements,
+                'Displacement Function Magnitude','Diaphragm Displacement',
+                pyplot,fig,label=label,suptitle=suptitle)
 
     return frequencies,displacements

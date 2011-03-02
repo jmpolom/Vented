@@ -1,8 +1,8 @@
-1) Finish parameter calculation from characteristics of specific response
-2) Move repeatedly calculated values from other param calculating functions 
+1) Move repeatedly calculated values from other param calculating functions 
    into functions
-3) Add some console output while script runs, IE: to let the user know its
+2) Add some console output while script runs, IE: to let the user know its
    working
+3) Objects
 4) Make sure to update dependent functions or include wrappers for backwards 
    compat
 5) Some other test cases?
