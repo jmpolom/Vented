@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
 from numpy import append,array,log10,logspace,pi,sqrt
-from scipy.optimize import fixed_point,fsolve
+from scipy.optimize import fixed_point
 from scipy.special import cbrt
 
 __author__ = "Jonathan Polom <s0nic0nslaught@gmail.com>"
@@ -80,8 +80,10 @@ def __calc_h_a3(h,Qes,Qms,Ql=7):
 
     return (h*Ql + Qt)/(sqrt(h)*Ql*Qt)
 
-def __calc_K_c4(K):
-    return (1 + K**4/(64 + 28*K + 80*K**2 + 16*K**3))
+def __calc_k_c4(k):
+    k = float(k)
+    K = 1.00/k**2 - 1.00
+    return 10*log10(1 + K**4/(64 + 28*K + 80*K**2 + 16*K**3))
 
 def __calc_D_c4(k):
     return (k**4 + 6*k**2 + 1)/8
@@ -202,9 +204,7 @@ def params_resp(Fs,Qes,Qms,Vas,D,resp='qb3',db_ripple=0.01,B=1.00):
         a2 = 4.39155
         a3 = 3.12394
     if resp == 'c4':
-        ripple = db_ripple / 10.00
-        K = fixed_point(__calc_K_c4,ripple)
-        k = sqrt(1/(K+1))
+        k = 1.2
         
         a3 = k*sqrt(4 + 2*sqrt(2))/cbrt(__calc_D_c4(k))
         a2 = 1 + k**2*(1 + sqrt(2))/sqrt(__calc_D_c4(k))
@@ -230,7 +230,7 @@ def params_resp(Fs,Qes,Qms,Vas,D,resp='qb3',db_ripple=0.01,B=1.00):
 
     Qt = Qes*Qms/(Qes + Qms) # Approximate total system Q (Qt) with total driver Q (Qts)
     
-    return Fb,Lv,Qt,Tb,Ts,a,h
+    return Fb,Lv,Qt,Tb,Ts,a,h,k
 
 def response(f,T0,a1,a2,a3):
     """
