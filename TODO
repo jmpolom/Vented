@@ -1,8 +1,7 @@
-1) Move repeatedly calculated values from other param calculating functions 
-   into functions
+1) Objects: enclosure, loudspeaker, system
 2) Add some console output while script runs, IE: to let the user know its
    working
-3) Objects
+3) Refactoring commonly calculated values into function or object attributes
 4) Make sure to update dependent functions or include wrappers for backwards 
    compat
 5) Some other test cases?
