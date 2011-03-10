@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-vented.py : vented loudspeaker enclosure response calculator
+vented loudspeaker enclosure response calculator
 Copyright (C) 2010 Jonathan Polom <s0nic0nslaught@gmail.com>
 
 vented.py provides functions that calculate model predicted frequency 
@@ -25,12 +25,55 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import datetime
-from numpy import append,array,log10,logspace,pi,sqrt
+from numpy import append,array,float,log10,logspace,pi,sqrt
 
 __author__ = "Jonathan Polom <s0nic0nslaught@gmail.com>"
 __date__ = datetime.date(2011, 3, 9)
 __version__ = '0.8'
 __license__ = "GNU General Public License"
+
+class Enclosure():
+    def __init__(self, Vb, Lv, D, base='custom'):
+        self.Vb = float(Vb)
+        self.Lv = float(Lv)
+        self.D = float(D)
+
+        try:
+            baseChoices = ['si','us', 'custom']
+            i = baseChoices.index(base)
+            self.base = baseChoices[i]
+        except:
+            raise ValueError
+
+class Driver():
+    def __init__(self, Fs, Qes, Qms, Vas, base='si'):
+        self.Fs = float(Fs)
+        self.Qes = float(Qes)
+        self.Qms = float(Qms)
+        self.Vas = float(Vas)
+        
+        try:
+            baseChoices = ['si','us']
+            i = baseChoices.index(base)
+            self.base = baseChoices[i]
+        except:
+            raise ValueError
+
+class System():
+    def __init__(self, driver, enclosure, a=None, h=None, resp='calculated'):
+        self.driver = driver
+        self.enclosure = enclosure
+
+        try:
+            rChoices = ['qb3','sqb3','bb4','sbb4','c4','sc4','calculated']
+            i = rChoices.index(resp)
+            self.resp = rChoices[i]
+        except:
+            raise ValueError
+        
+        if a and h:
+            self.a = float(a)
+            self.h = float(h)
 
 def filterCoeffs(a,h,Ql,Qt):
     """    
