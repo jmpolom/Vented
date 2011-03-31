@@ -1,7 +1,8 @@
-1) Objects: enclosure, loudspeaker, system
+X) Objects: enclosure, loudspeaker, system -> Not necessary. Will remain
+   a library a functions. There are other ways to reduce code duplication.
 2) Add some console output while script runs, IE: to let the user know its
    working
 3) Refactoring commonly calculated values into function or object attributes
 4) Make sure to update dependent functions or include wrappers for backwards 
    compat
-5) Some other test cases?
+5) Some actual test cases with unit test library
