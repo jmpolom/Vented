@@ -19,8 +19,4 @@ Vb = 81.84  # Enclosure volume, in liters
 
 vented.responsePlot(Fs,Qes,Qms,Re,Vas,D,Vb=Vb,Lv=Lv,label='81.84 L enclosure',suptitle=name,freq_max=500,pyplot=plt)
 vented.responsePlot(Fs,Qes,Qms,Re,Vas,D,a=1.5109,h=1.0667,Vb=Vb,Lv=Lv,label='SC4 alignment',suptitle=name,freq_max=500,pyplot=plt)
-vented.impedancePlot(Fs,Qes,Qms,Re,Vas,D,Vb=Vb,Lv=Lv,label='81.84 L enclosure',suptitle=name,freq_max=500,pyplot=plt)
-vented.impedancePlot(Fs,Qes,Qms,Re,Vas,D,a=1.5109,h=1.0667,Vb=Vb,Lv=Lv,label='SC4 alignment',suptitle=name,freq_max=500,pyplot=plt)
-vented.displacementPlot(Fs,Qes,Qms,Re,Vas,D,Vb=Vb,Lv=Lv,label='81.84 L enclosure',suptitle=name,freq_max=500,pyplot=plt)
-vented.displacementPlot(Fs,Qes,Qms,Re,Vas,D,a=1.5109,h=1.0667,Vb=Vb,Lv=Lv,label='SC4 alignment',suptitle=name,freq_max=500,pyplot=plt)
 plt.show()

@@ -32,49 +32,6 @@ __date__ = datetime.date(2011, 3, 9)
 __version__ = '0.8'
 __license__ = "GNU General Public License"
 
-class Enclosure():
-    def __init__(self, Vb, Lv, D, base='custom'):
-        self.Vb = float(Vb)
-        self.Lv = float(Lv)
-        self.D = float(D)
-
-        try:
-            baseChoices = ['si','us', 'custom']
-            i = baseChoices.index(base)
-            self.base = baseChoices[i]
-        except:
-            raise ValueError
-
-class Driver():
-    def __init__(self, Fs, Qes, Qms, Vas, base='si'):
-        self.Fs = float(Fs)
-        self.Qes = float(Qes)
-        self.Qms = float(Qms)
-        self.Vas = float(Vas)
-        
-        try:
-            baseChoices = ['si','us']
-            i = baseChoices.index(base)
-            self.base = baseChoices[i]
-        except:
-            raise ValueError
-
-class System():
-    def __init__(self, driver, enclosure, a=None, h=None, resp='calculated'):
-        self.driver = driver
-        self.enclosure = enclosure
-
-        try:
-            rChoices = ['qb3','sqb3','bb4','sbb4','c4','sc4','calculated']
-            i = rChoices.index(resp)
-            self.resp = rChoices[i]
-        except:
-            raise ValueError
-        
-        if a and h:
-            self.a = float(a)
-            self.h = float(h)
-
 def filterCoeffs(a,h,Ql,Qt):
     """    
     Calculates filter coefficients a1, a2, and a3 from alignment parameters
@@ -176,6 +133,11 @@ def paramsAlign(Fs,Qes,Qms,Vas,D,a,h):
     return Fb,Lv,Qt,Tb,Ts
 
 def paramsLookup(Fs,Qes,Qms,Vas,D,resp='qb3'):
+    """
+    This function will calculate dependent parameters via a table lookup
+    in the alignment tables provided in Loudspeaker Design Cookbook by
+    Dickason.
+    """
     return NotImplementedError
 
 def response(f,T0,a1,a2,a3):
@@ -324,7 +286,8 @@ def freqVals(freq_min,freq_max,res,basex=10):
 
 def responsePlot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
                  resp='qb3',label=None,suptitle=None,freq_min=10,
-                 freq_max=20000,res=1000,pyplot=None,fig=1):
+                 freq_max=20000,res=1000,pyplot=None,fig=1,
+                 frequency=True,impedance=False,displacement=False):
     """
     Calculates and returns a vented loudspeaker enclosure system's 
     response (gain) values over the specified frequency range (default 
@@ -334,11 +297,15 @@ def responsePlot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
     -------
     frequencies : array-like
         Frequencies where system response calculated
-    responses : array-like
-        Relative system response gain values, calculated at frequencies in 
-        response_range
-    impedance_values : array-like
-    displacement_values : array-like
+    outData : array-like
+        responses : array-like
+        impedances : array-like
+        displacements : array-like
+        
+        Output array from calculations. Contains raw frequency response data,
+        impedances and/or displacement values. System response gain values are
+        relative. 'frequencies' contains the array of frequencies which the
+        response, impedance and displacement functions were evaluated.
     """
 
     """
@@ -349,14 +316,17 @@ def responsePlot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
     """
 
     if a is None and h is None and Lv is None and Vb is None:
+        # Lookup dependent params via alignment tables
         Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Vas,D,resp=resp)
+    elif a is not None and h is not None:
+        # Takes priority if all four happen to be specified
+        # Generate dependent params via specified a,h
+        Fb,Lv,Qt,Tb,Ts = paramsAlign(Fs,Qes,Qms,Vas,D,a,h)
     elif Lv is not None and Vb is not None:
-        if a is None and h is None:
-            # Generate dependent params via vent tuning equation
-            Fb,Qt,Tb,Ts,a,h = paramsCalc(Fs,Qes,Qms,Vas,D,Vb,Lv)
-        elif a is not None and h is not None:
-            # Generate dependent params via specified a,h
-            Fb,Lv,Qt,Tb,Ts = paramsAlign(Fs,Qes,Qms,Vas,D,a,h)
+        # Generate dependent params via vent tuning equation
+        Fb,Qt,Tb,Ts,a,h = paramsCalc(Fs,Qes,Qms,Vas,D,Vb,Lv)
+    else:
+        raise TypeError
 
     # Generate alignment specification parameters
     T0 = timeConstant(h,Ts)
@@ -365,119 +335,52 @@ def responsePlot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,Vb=None,Ql=7,
     # Frequency response range
     frequencies = freqVals(freq_min,freq_max,res)
 
-    # Empty array for frequency response data calculated next
-    responses = array([])
+    # Empty array to contain output data
+    outData = array([])
 
-    # Generate frequency response values
-    for f in frequencies:
-        responses = append(responses,response(f,T0,a1,a2,a3))
+    # Calculate responses
+    if frequency:
+        # Empty array for frequency response data
+        responses = array([])
+        # Generate frequency response values
+        for f in frequencies:
+            responses = append(responses,response(f,T0,a1,a2,a3))
 
-    # Plot the response data if given matplotlib plotting object
-    if pyplot != None:
-        plotter(frequencies,responses,'Response Level (dB)',
-                'Frequency Response',pyplot,fig,label=label,suptitle=suptitle,
-                ymin=-24,ymax=6,ystep=3)
+        if pyplot != None:
+            plotter(frequencies,responses,'Response Level (dB)',
+                    'Frequency Response',pyplot,fig,label=label,
+                    suptitle=suptitle,ymin=-24,ymax=6,ystep=3)
 
-    # Return system response data
-    return frequencies,responses
+        outData = append(outData, responses)
+    if impedance:
+        # Empty array for impedance response data
+        impedances = array([])
+        # Generate impedance response values
+        for f in frequencies:
+            impedances = append(impedances,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
 
-def impedancePlot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,Lv=None,
-                  Vb=None,Ql=7,label=None,suptitle=None,freq_min=10,
-                  freq_max=20000,res=1000,pyplot=None,fig=2):
-    """
-    Calculates and returns a vented loudspeaker enclosure driver's 
-    impedance values over the specified frequency range (default range is 
-    10 Hz to 20 kHz).
+        if pyplot != None:
+            plotter(frequencies,impedances,'Impedance (Ohms)',
+                    'Voice Coil Impedance',pyplot,fig+1,label=label,
+                    suptitle=suptitle)
 
-    Returns
-    -------
-    frequencies : array-like
-        Frequencies where impedances calculated
-    impedances : array-like
-        Calculated vented enclosure driver voice coil impedances
-    """
+        outData = append(outData, impedances)
+    if displacement:
+        # Empty array for displacement response data
+        displacements = array([])
+        # Generate displacement response values
+        for f in frequencies:
+            displacements = append(displacements,displacement(f,a,Ql,Qt,Tb,Ts))
 
-    """
-    Three cases:
-        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are specified -> create alignment accordingly starting with calculation of Fb from Lv and D
-        2) Fs, Qes, Qms, Vas, and D are specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
-        3) Fs, Qes, Qms, Vas, and D are specified, along with a and h -> create alignment using a and h values specified
-    """
+        if pyplot != None:
+            plotter(frequencies,displacements,
+                    'Displacement Function Magnitude','Diaphragm Displacement',
+                    pyplot,fig+2,label=label,suptitle=suptitle)
 
-    if a is None and h is None and Lv is None and Vb is None:
-        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Vas,D,resp=resp)
-    elif Lv is not None and Vb is not None:
-        if a is None and h is None:
-            # Generate dependent params via vent tuning equation
-            Fb,Qt,Tb,Ts,a,h = paramsCalc(Fs,Qes,Qms,Vas,D,Vb,Lv)
-        elif a is not None and h is not None:
-            # Generate dependent params via specified a,h
-            Fb,Lv,Qt,Tb,Ts = paramsAlign(Fs,Qes,Qms,Vas,D,a,h)
+        outData = append(outData, displacements)
 
-    # Frequency range
-    frequencies = freqVals(freq_min,freq_max,res)
-
-    # Empty array for impedance data calculated next
-    impedances = array([])
-
-    # Generate frequency response values
-    for f in frequencies:
-        impedances = append(impedances,impedance(f,a,Ql,Qes,Qms,Re,Tb,Ts))
-
-    # Plot the impedance data if given matplotlib plotting object
-    if pyplot != None:
-        plotter(frequencies,impedances,'Impedance (Ohms)',
-                'Voice Coil Impedance',pyplot,fig,label=label,suptitle=suptitle)
-
-    return frequencies,impedances
-
-def displacementPlot(Fs,Qes,Qms,Re,Vas,D,a=None,h=None,
-                     Lv=None,Vb=None,Ql=7,label=None,suptitle=None,
-                     freq_min=10,freq_max=20000,res=1000,pyplot=None,fig=3):
-    """
-    Calculates and returns a vented loudspeaker enclosure driver's 
-    impedance values over the specified frequency range (default range is 
-    10 Hz to 20 kHz).
-
-    Returns
-    -------
-    frequencies : array-like
-        Frequencies where displacements calculated
-    displacements : array-like
-        Displacement function magnitude
-    """
-
-    """
-    Three cases:
-        1) Fs, Qes, Qms, Vas, Vb, Lv, and D are specified -> create alignment accordingly starting with calculation of Fb from Lv and D
-        2) Fs, Qes, Qms, Vas, and D are specified -> lookup relevant values of a and h according to specified alignment type (EX: SC4 and SBB4)
-        3) Fs, Qes, Qms, Vas, and D are specified, along with a and h -> create alignment using a and h values specified
-    """
-
-    if a is None and h is None and Lv is None and Vb is None:
-        Fb,Lv,Qt,Tb,Ts,a,h = params_lookup(Fs,Qes,Qms,Vas,D,resp=resp)
-    elif Lv is not None and Vb is not None:
-        if a is None and h is None:
-            # Generate dependent params via vent tuning equation
-            Fb,Qt,Tb,Ts,a,h = paramsCalc(Fs,Qes,Qms,Vas,D,Vb,Lv)
-        elif a is not None and h is not None:
-            # Generate dependent params via specified a,h
-            Fb,Lv,Qt,Tb,Ts = paramsAlign(Fs,Qes,Qms,Vas,D,a,h)
-
-    # Frequency range
-    frequencies = freqVals(freq_min,freq_max,res)
-
-    # Empty array for impedance data calculated next
-    displacements = array([])
-
-    # Generate frequency response values
-    for f in frequencies:
-        displacements = append(displacements,displacement(f,a,Ql,Qt,Tb,Ts))
-
-    # Plot the impedance data if given matplotlib plotting object
-    if pyplot != None:
-        plotter(frequencies,displacements,
-                'Displacement Function Magnitude','Diaphragm Displacement',
-                pyplot,fig,label=label,suptitle=suptitle)
-
-    return frequencies,displacements
+    # Return output data as tuple
+    if len(outData) == 1:
+        return frequencies,outData[0]
+    else:
+        return frequencies,outData
